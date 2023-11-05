@@ -10,7 +10,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['https://admin.socket.io', 'http://localhost:5173'],
+    origin: ['https://admin.socket.io', 'http://localhost:5173', 'http://localhost:4000'],
     credentials: true,
   },
 });
