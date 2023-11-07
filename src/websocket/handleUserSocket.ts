@@ -17,6 +17,11 @@ export const disconnectPlayer = (socket: Socket, playerName: string): void => {
 
 const joinUser = (socket: Socket, playerName: string): void => {
   if (playerName.trim() !== '') {
+    const playerNameRegex = /^[a-zA-Z0-9]+$/;
+    if (!playerNameRegex.test(playerName)) {
+      socket.emit('user-join-failed', 'O nome do usuário deve ser apenas letras e números.');
+      return;
+    }
     const exist = playerSingleton.hasPlayerWithName(playerName);
     if (exist) {
       socket.emit('user-join-failed', 'Nome do usuário já existe.');

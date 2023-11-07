@@ -35,7 +35,8 @@ export class RoomSingleton {
   }
 
   public hasRoomWithName(name: string): boolean {
-    return this.rooms.some(room => room.name === name);
+    const lowerCaseName = name.toLowerCase();
+    return this.rooms.some(room => room.name.toLowerCase() === lowerCaseName);
   }
 
   public addPlayerToRoom(roomName: string, player: IPlayer): void {
@@ -72,6 +73,22 @@ export class RoomSingleton {
     const room = this.get(roomName);
     if (room) {
       return room.players.some(player => player.name === playerName);
+    }
+    return false;
+  }
+
+  public updateRoomPlayerWithName(
+    roomName: string,
+    playerName: string,
+    isRoomOwner: boolean
+  ): boolean {
+    const room = this.get(roomName);
+    if (room) {
+      const player = room.players.find(player => player.name === playerName);
+      if (player) {
+        player.isRoomOwner = isRoomOwner;
+        return true;
+      }
     }
     return false;
   }

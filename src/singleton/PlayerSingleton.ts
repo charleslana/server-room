@@ -34,6 +34,7 @@ export class PlayerSingleton {
   }
 
   public hasPlayerWithName(name: string): boolean {
-    return this.players.some(player => player.name === name);
+    const lowerCaseName = name.toLowerCase();
+    return this.players.some(player => player.name.toLowerCase() === lowerCaseName);
   }
 }

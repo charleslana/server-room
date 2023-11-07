@@ -14,7 +14,7 @@ export const joinMainRoom = (socket: Socket): void => {
   if (!roomSingleton.hasRoomWithName(mainRoom)) {
     roomSingleton.add({ name: mainRoom, players: [] });
   }
-  const player = PlayerSingleton.getInstance().get(socket.id)!;
+  const player = playerSingleton.get(socket.id)!;
   roomSingleton.addPlayerToRoom(mainRoom, player);
   socket.join(mainRoom);
   socket.to(mainRoom).emit('players-main-room', roomSingleton.get(mainRoom));

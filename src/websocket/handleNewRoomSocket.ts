@@ -13,6 +13,7 @@ export const leaveAllNewRoom = (socket: Socket) => {
     const rooms = roomSingleton.getAll();
     rooms.forEach(room => {
       if (roomSingleton.hasRoomPlayerWithName(room.name, player.name)) {
+        setRoomOwner(socket, room, player.name);
         roomSingleton.deletePlayerInRoom(room.name, player.name);
         socket.leave(room.name);
         console.log(`${player.name} left the room: ${room.name}`);
@@ -32,12 +33,17 @@ export const handleNewRoomSocket = (socket: Socket): void => {
   });
   socket.on('join-room', (roomName: string) => {
     const room = roomSingleton.get(roomName);
-    if (room) {
+    if (room && room.players.length < 2) {
       const player = playerSingleton.get(socket.id)!;
-      roomSingleton.addPlayerToRoom(roomName, player);
+      roomSingleton.addPlayerToRoom(roomName, {
+        id: player.id,
+        name: player.name,
+        isRoomOwner: false,
+      });
       leaveMainRoom(socket);
       socket.join(roomName);
       socket.emit('join-room-success', roomName);
+      socket.to(mainRoom).emit('rooms', getRooms());
       console.log(`${player.name} joined room: ${roomName}`);
     }
   });
@@ -45,15 +51,23 @@ export const handleNewRoomSocket = (socket: Socket): void => {
     const room = roomSingleton.get(roomName);
     if (room) {
       const player = playerSingleton.get(socket.id)!;
+      setRoomOwner(socket, room, player.name);
       roomSingleton.deletePlayerInRoom(roomName, player.name);
       socket.leave(roomName);
       socket.emit('leave-room-success');
       console.log(`${player.name} left the room: ${roomName}`);
       if (room.players.length === 0) {
         roomSingleton.delete(room.name);
-        socket.to(mainRoom).emit('rooms', getRooms());
       }
+      socket.to(mainRoom).emit('rooms', getRooms());
       joinMainRoom(socket);
+    }
+  });
+  socket.on('get-user-room-info', (roomName: string) => {
+    const player = playerSingleton.get(socket.id);
+    if (player && roomSingleton.hasRoomWithName(roomName)) {
+      const getRoomPlayer = roomSingleton.getPlayerInRoom(roomName, player.name);
+      socket.emit('user-room-info', getRoomPlayer);
     }
   });
 };
@@ -61,9 +75,12 @@ export const handleNewRoomSocket = (socket: Socket): void => {
 const handleCreateRoom = (socket: Socket): void => {
   socket.on('create-room', (roomName: string) => {
     if (roomName.trim() !== '') {
-      const roomNameRegex = /^[a-zA-Z0-9]+$/;
+      const roomNameRegex = /^[a-z0-9]+$/;
       if (!roomNameRegex.test(roomName)) {
-        socket.emit('room-creation-failed', 'O nome da sala deve ser apenas letras e números.');
+        socket.emit(
+          'room-creation-failed',
+          'O nome da sala deve ser apenas letras minúsculas e números.'
+        );
         return;
       }
       if (roomName.trim().length > 15) {
@@ -80,7 +97,11 @@ const handleCreateRoom = (socket: Socket): void => {
       const player = playerSingleton.get(socket.id)!;
       const room = roomSingleton.get(roomName.trim());
       if (room) {
-        roomSingleton.addPlayerToRoom(roomName, player);
+        roomSingleton.addPlayerToRoom(roomName, {
+          id: player.id,
+          name: player.name,
+          isRoomOwner: true,
+        });
         leaveMainRoom(socket);
         socket.join(roomName.trim());
         socket.emit('room-created', roomName.trim());
@@ -92,6 +113,24 @@ const handleCreateRoom = (socket: Socket): void => {
 };
 
 const getRooms = (): IRoom[] => {
-  const rooms = RoomSingleton.getInstance().getAll();
+  const rooms = roomSingleton.getAll();
   return rooms.filter(room => room.name !== mainRoom);
+};
+
+const setRoomOwner = (socket: Socket, room: IRoom, playerName: string): void => {
+  if (room.players.length > 1) {
+    const currentOwner = room.players.find(
+      player => player.name === playerName && player.isRoomOwner
+    );
+    if (currentOwner) {
+      const newOwner = room.players.find(player => player.name !== playerName);
+      if (newOwner) {
+        roomSingleton.updateRoomPlayerWithName(room.name, currentOwner.name, false);
+        roomSingleton.updateRoomPlayerWithName(room.name, newOwner.name, true);
+        currentOwner.isRoomOwner = false;
+        newOwner.isRoomOwner = true;
+        socket.to(room.name).emit('user-room-info', newOwner);
+      }
+    }
+  }
 };
