@@ -18,10 +18,10 @@ export const handleSocket = (io: Server): void => {
 };
 
 const disconnect = (socket: Socket): void => {
-  const playerName = playerSingleton.get(socket.id);
-  if (playerName) {
+  const player = playerSingleton.get(socket.id);
+  if (player) {
     leaveMainRoom(socket);
     leaveAllNewRoom(socket);
-    disconnectPlayer(socket, playerName);
+    disconnectPlayer(socket, player.name);
   }
 };

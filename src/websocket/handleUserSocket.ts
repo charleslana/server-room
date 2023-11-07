@@ -17,17 +17,17 @@ export const disconnectPlayer = (socket: Socket, playerName: string): void => {
 
 const joinUser = (socket: Socket, playerName: string): void => {
   if (playerName.trim() !== '') {
-    const getAllPlayers = playerSingleton.getAll();
-    const exist = Array.from(getAllPlayers.values()).some(
-      existingPlayerName => existingPlayerName === playerName
-    );
+    const exist = playerSingleton.hasPlayerWithName(playerName);
     if (exist) {
       socket.emit('user-join-failed', 'Nome do usuário já existe.');
       return;
     }
-    playerSingleton.set(socket.id, playerName);
+    playerSingleton.add({
+      id: socket.id,
+      name: playerName,
+    });
     socket.emit('join-success');
     console.log(`${playerName} connected`);
-    joinMainRoom(socket, playerName);
+    joinMainRoom(socket);
   }
 };

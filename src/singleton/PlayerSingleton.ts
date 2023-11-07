@@ -1,7 +1,9 @@
+import { IPlayer } from 'interface/IPlayer';
+
 export class PlayerSingleton {
   private constructor() {}
 
-  private players: Map<string, string> = new Map();
+  private players: IPlayer[] = [];
 
   private static instance: PlayerSingleton | null = null;
 
@@ -12,19 +14,26 @@ export class PlayerSingleton {
     return this.instance;
   }
 
-  public set(key: string, value: string): void {
-    this.players.set(key, value);
+  public add(player: IPlayer): void {
+    this.players.push(player);
   }
 
-  public get(key: string): string | undefined {
-    return this.players.get(key);
+  public get(id: string): IPlayer | undefined {
+    return this.players.find(player => player.id === id);
   }
 
-  public getAll(): Map<string, string> {
+  public getAll(): IPlayer[] {
     return this.players;
   }
 
-  public delete(key: string): boolean {
-    return this.players.delete(key);
+  public delete(id: string): void {
+    const index = this.players.findIndex(player => player.id === id);
+    if (index !== -1) {
+      this.players.splice(index, 1);
+    }
+  }
+
+  public hasPlayerWithName(name: string): boolean {
+    return this.players.some(player => player.name === name);
   }
 }
