@@ -22,6 +22,10 @@ const joinUser = (socket: Socket, playerName: string): void => {
       socket.emit('user-join-failed', 'O nome do usuário deve ser apenas letras e números.');
       return;
     }
+    if (playerName.length > 15) {
+      socket.emit('user-join-failed', 'O nome deve conter no máximo 15 caracteres.');
+      return;
+    }
     const exist = playerSingleton.hasPlayerWithName(playerName);
     if (exist) {
       socket.emit('user-join-failed', 'Nome do usuário já existe.');

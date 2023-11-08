@@ -1,11 +1,14 @@
+import { IChat } from 'interface/IChat';
+import { IPlayer } from 'interface/IPlayer';
 import { IRoom } from 'interface/IRoom';
 import { joinMainRoom, leaveMainRoom, mainRoom } from './handleMainRoomSocket';
 import { PlayerSingleton } from 'singleton/PlayerSingleton';
 import { RoomSingleton } from 'singleton/RoomSingleton';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 const roomSingleton = RoomSingleton.getInstance();
 const playerSingleton = PlayerSingleton.getInstance();
+const chatList: IChat[] = [];
 
 export const leaveAllNewRoom = (socket: Socket) => {
   const player = playerSingleton.get(socket.id);
@@ -15,6 +18,8 @@ export const leaveAllNewRoom = (socket: Socket) => {
       if (roomSingleton.hasRoomPlayerWithName(room.name, player.name)) {
         setRoomOwner(socket, room, player.name);
         roomSingleton.deletePlayerInRoom(room.name, player.name);
+        socket.to(room.name).emit('players-in-room', getPlayersInRoom(room.name));
+        leaveChat(socket, player.name, room.name);
         socket.leave(room.name);
         console.log(`${player.name} left the room: ${room.name}`);
         if (room.players.length === 0) {
@@ -26,7 +31,7 @@ export const leaveAllNewRoom = (socket: Socket) => {
   }
 };
 
-export const handleNewRoomSocket = (socket: Socket): void => {
+export const handleNewRoomSocket = (socket: Socket, io: Server): void => {
   handleCreateRoom(socket);
   socket.on('get-rooms', () => {
     socket.emit('rooms', getRooms());
@@ -44,6 +49,7 @@ export const handleNewRoomSocket = (socket: Socket): void => {
       socket.join(roomName);
       socket.emit('join-room-success', roomName);
       socket.to(mainRoom).emit('rooms', getRooms());
+      socket.to(roomName).emit('players-in-room', getPlayersInRoom(roomName));
       console.log(`${player.name} joined room: ${roomName}`);
     }
   });
@@ -53,6 +59,8 @@ export const handleNewRoomSocket = (socket: Socket): void => {
       const player = playerSingleton.get(socket.id)!;
       setRoomOwner(socket, room, player.name);
       roomSingleton.deletePlayerInRoom(roomName, player.name);
+      socket.to(roomName).emit('players-in-room', getPlayersInRoom(roomName));
+      leaveChat(socket, player.name, roomName);
       socket.leave(roomName);
       socket.emit('leave-room-success');
       console.log(`${player.name} left the room: ${roomName}`);
@@ -68,6 +76,23 @@ export const handleNewRoomSocket = (socket: Socket): void => {
     if (player && roomSingleton.hasRoomWithName(roomName)) {
       const getRoomPlayer = roomSingleton.getPlayerInRoom(roomName, player.name);
       socket.emit('user-room-info', getRoomPlayer);
+    }
+  });
+  socket.on('get-players-in-room', (roomName: string) => {
+    socket.emit('players-in-room', getPlayersInRoom(roomName));
+  });
+  socket.on('get-chat-messages-in-room', (roomName: string) => {
+    joinChat(socket, io, roomName);
+  });
+  socket.on('send-message-in-room', (message: string, roomName: string) => {
+    const player = playerSingleton.get(socket.id);
+    if (player) {
+      const chat: IChat = {
+        playerName: player.name,
+        message: message,
+      };
+      chatList.push(chat);
+      io.to(roomName).emit('receive-message-in-room', chat);
     }
   });
 };
@@ -133,4 +158,33 @@ const setRoomOwner = (socket: Socket, room: IRoom, playerName: string): void => 
       }
     }
   }
+};
+
+const getPlayersInRoom = (roomName: string): IPlayer[] => {
+  const room = roomSingleton.get(roomName);
+  if (room) {
+    return room.players;
+  }
+  return [];
+};
+
+const joinChat = (socket: Socket, io: Server, roomName: string): void => {
+  const player = playerSingleton.get(socket.id);
+  if (player) {
+    const chat: IChat = {
+      playerName: 'Servidor',
+      message: `${player.name} entrou na sala`,
+    };
+    chatList.push(chat);
+    io.to(roomName).emit('receive-message-in-room', chat);
+  }
+};
+
+const leaveChat = (socket: Socket, playerName: string, roomName: string): void => {
+  const chat: IChat = {
+    playerName: 'Servidor',
+    message: `${playerName} saiu da sala`,
+  };
+  chatList.push(chat);
+  socket.to(roomName).emit('receive-message-in-room', chat);
 };

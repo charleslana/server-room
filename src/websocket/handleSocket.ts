@@ -10,7 +10,7 @@ export const handleSocket = (io: Server): void => {
   io.on('connection', (socket: Socket) => {
     handleUserSocket(socket);
     handleMainRoomSocket(socket, io);
-    handleNewRoomSocket(socket);
+    handleNewRoomSocket(socket, io);
     socket.on('disconnect', () => {
       disconnect(socket);
     });

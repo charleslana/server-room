@@ -47,24 +47,28 @@ export const handleMainRoomSocket = (socket: Socket, io: Server): void => {
     joinChat(socket, io);
   });
   socket.on('send-message-main-room', (message: string) => {
-    const player = playerSingleton.get(socket.id)!;
-    const chat: IChat = {
-      playerName: player.name,
-      message: message,
-    };
-    chatList.push(chat);
-    io.to(mainRoom).emit('receive-message-main-room', chat);
+    const player = playerSingleton.get(socket.id);
+    if (player) {
+      const chat: IChat = {
+        playerName: player.name,
+        message: message,
+      };
+      chatList.push(chat);
+      io.to(mainRoom).emit('receive-message-main-room', chat);
+    }
   });
 };
 
 const joinChat = (socket: Socket, io: Server): void => {
-  const player = playerSingleton.get(socket.id)!;
-  const chat: IChat = {
-    playerName: 'Servidor',
-    message: `${player.name} entrou na sala principal`,
-  };
-  chatList.push(chat);
-  io.to(mainRoom).emit('receive-message-main-room', chat);
+  const player = playerSingleton.get(socket.id);
+  if (player) {
+    const chat: IChat = {
+      playerName: 'Servidor',
+      message: `${player.name} entrou na sala principal`,
+    };
+    chatList.push(chat);
+    io.to(mainRoom).emit('receive-message-main-room', chat);
+  }
 };
 
 const leaveChat = (socket: Socket, playerName: string): void => {
