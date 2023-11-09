@@ -109,6 +109,20 @@ export const handleNewRoomSocket = (socket: Socket, io: Server): void => {
       }
     }
   });
+  socket.on('change-room-password', (roomName: string, newPassword: string) => {
+    if (roomName.trim() !== '') {
+      newPassword = newPassword.slice(0, 6);
+      const player = playerSingleton.get(socket.id);
+      if (player) {
+        const room = roomSingleton.getPlayerInRoom(roomName, player.name);
+        if (room && room.isRoomOwner) {
+          roomSingleton.updateRoomPassword(roomName, newPassword);
+          io.to(roomName).emit('room-info', roomSingleton.get(roomName));
+          socket.to(mainRoom).emit('rooms', getRooms());
+        }
+      }
+    }
+  });
 };
 
 const handleCreateRoom = (socket: Socket): void => {
@@ -131,7 +145,10 @@ const handleCreateRoom = (socket: Socket): void => {
         return;
       }
       if (!roomSingleton.hasRoomWithName(roomName.trim())) {
-        roomSingleton.add({ name: roomName.trim(), password: password?.trim(), players: [] });
+        if (password) {
+          password = password.slice(0, 6).trim();
+        }
+        roomSingleton.add({ name: roomName.trim(), password: password, players: [] });
       }
       const player = playerSingleton.get(socket.id)!;
       const room = roomSingleton.get(roomName.trim());

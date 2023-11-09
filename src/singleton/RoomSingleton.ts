@@ -92,4 +92,13 @@ export class RoomSingleton {
     }
     return false;
   }
+
+  public updateRoomPassword(roomName: string, newPassword: string): boolean {
+    const room = this.get(roomName);
+    if (room) {
+      room.password = newPassword;
+      return true;
+    }
+    return false;
+  }
 }
