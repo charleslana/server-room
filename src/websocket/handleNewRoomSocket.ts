@@ -36,9 +36,13 @@ export const handleNewRoomSocket = (socket: Socket, io: Server): void => {
   socket.on('get-rooms', () => {
     socket.emit('rooms', getRooms());
   });
-  socket.on('join-room', (roomName: string) => {
+  socket.on('join-room', (roomName: string, password?: string) => {
     const room = roomSingleton.get(roomName);
     if (room && room.players.length < 2) {
+      if (room.password && room.password !== password) {
+        socket.emit('join-room-error', 'Senha da sala incorreta.');
+        return;
+      }
       const player = playerSingleton.get(socket.id)!;
       roomSingleton.addPlayerToRoom(roomName, {
         id: player.id,
@@ -75,7 +79,8 @@ export const handleNewRoomSocket = (socket: Socket, io: Server): void => {
     const player = playerSingleton.get(socket.id);
     if (player && roomSingleton.hasRoomWithName(roomName)) {
       const getRoomPlayer = roomSingleton.getPlayerInRoom(roomName, player.name);
-      socket.emit('user-room-info', getRoomPlayer);
+      const room = roomSingleton.get(roomName);
+      socket.emit('user-room-info', getRoomPlayer, room);
     }
   });
   socket.on('get-players-in-room', (roomName: string) => {
@@ -95,10 +100,19 @@ export const handleNewRoomSocket = (socket: Socket, io: Server): void => {
       io.to(roomName).emit('receive-message-in-room', chat);
     }
   });
+  socket.on('remove-room-player', (roomName: string, playerName: string) => {
+    const player = playerSingleton.get(socket.id);
+    if (player) {
+      const getPlayer = roomSingleton.getPlayerInRoom(roomName, player.name);
+      if (getPlayer && getPlayer.isRoomOwner && getPlayer.name !== playerName) {
+        socket.to(roomName).emit('leave-room-automatically', playerName);
+      }
+    }
+  });
 };
 
 const handleCreateRoom = (socket: Socket): void => {
-  socket.on('create-room', (roomName: string) => {
+  socket.on('create-room', (roomName: string, password?: string) => {
     if (roomName.trim() !== '') {
       const roomNameRegex = /^[a-z0-9]+$/;
       if (!roomNameRegex.test(roomName)) {
@@ -117,7 +131,7 @@ const handleCreateRoom = (socket: Socket): void => {
         return;
       }
       if (!roomSingleton.hasRoomWithName(roomName.trim())) {
-        roomSingleton.add({ name: roomName.trim(), players: [] });
+        roomSingleton.add({ name: roomName.trim(), password: password?.trim(), players: [] });
       }
       const player = playerSingleton.get(socket.id)!;
       const room = roomSingleton.get(roomName.trim());
@@ -154,7 +168,7 @@ const setRoomOwner = (socket: Socket, room: IRoom, playerName: string): void => 
         roomSingleton.updateRoomPlayerWithName(room.name, newOwner.name, true);
         currentOwner.isRoomOwner = false;
         newOwner.isRoomOwner = true;
-        socket.to(room.name).emit('user-room-info', newOwner);
+        socket.to(room.name).emit('user-room-info', newOwner, room);
       }
     }
   }
