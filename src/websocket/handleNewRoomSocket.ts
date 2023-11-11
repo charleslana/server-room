@@ -123,6 +123,10 @@ export const handleNewRoomSocket = (socket: Socket, io: Server): void => {
       }
     }
   });
+  socket.on('get-filter-room', (roomName: string) => {
+    const filteredRooms = roomSingleton.getRoomsByNameLike(roomName);
+    socket.emit('filtered-rooms', filteredRooms);
+  });
 };
 
 const handleCreateRoom = (socket: Socket): void => {
@@ -169,7 +173,7 @@ const handleCreateRoom = (socket: Socket): void => {
 };
 
 const getRooms = (): IRoom[] => {
-  const rooms = roomSingleton.getAll();
+  const rooms = roomSingleton.getTop20RoomsByPlayerCount();
   return rooms.filter(room => room.name !== mainRoom);
 };
 

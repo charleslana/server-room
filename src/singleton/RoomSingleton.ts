@@ -101,4 +101,18 @@ export class RoomSingleton {
     }
     return false;
   }
+
+  public getTop20RoomsByPlayerCount(): IRoom[] {
+    const sortedRooms = [...this.rooms].sort((a, b) => a.players.length - b.players.length);
+    const top20Lowest = sortedRooms.slice(0, 20);
+    return top20Lowest;
+  }
+
+  public getRoomsByNameLike(nameLike: string): IRoom[] {
+    const lowerCaseNameLike = nameLike.toLowerCase();
+    const filteredRooms = this.rooms.filter(room =>
+      room.name.toLowerCase().includes(lowerCaseNameLike)
+    );
+    return filteredRooms;
+  }
 }
