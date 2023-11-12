@@ -39,17 +39,17 @@ export class RoomSingleton {
     return this.rooms.some(room => room.name.toLowerCase() === lowerCaseName);
   }
 
-  public addPlayerToRoom(roomName: string, player: IPlayer): void {
+  public addPlayerToRoom(player: IPlayer, roomName: string): void {
     const room = this.get(roomName);
     if (room) {
       room.players.push(player);
     }
   }
 
-  public getPlayerInRoom(roomName: string, playerName: string): IPlayer | undefined {
+  public getPlayerByIdAndRoomName(playerId: string, roomName: string): IPlayer | undefined {
     const room = this.get(roomName);
     if (room) {
-      return room.players.find(player => player.name === playerName);
+      return room.players.find(player => player.id === playerId);
     }
     return undefined;
   }
@@ -59,10 +59,10 @@ export class RoomSingleton {
     return room ? room.players : [];
   }
 
-  public deletePlayerInRoom(roomName: string, playerName: string): void {
+  public deletePlayerByIdAndRoomName(playerId: string, roomName: string): void {
     const room = this.get(roomName);
     if (room) {
-      const index = room.players.findIndex(player => player.name === playerName);
+      const index = room.players.findIndex(player => player.id === playerId);
       if (index !== -1) {
         room.players.splice(index, 1);
       }
@@ -77,29 +77,18 @@ export class RoomSingleton {
     return false;
   }
 
-  public updateRoomPlayerWithName(
-    roomName: string,
-    playerName: string,
-    isRoomOwner: boolean
-  ): boolean {
-    const room = this.get(roomName);
-    if (room) {
-      const player = room.players.find(player => player.name === playerName);
-      if (player) {
-        player.isRoomOwner = isRoomOwner;
-        return true;
-      }
+  public updateRoomPlayerWithName(room: IRoom, playerName: string, isRoomOwner: boolean): void {
+    const player = room.players.find(player => player.name === playerName);
+    if (player) {
+      player.isRoomOwner = isRoomOwner;
     }
-    return false;
   }
 
-  public updateRoomPassword(roomName: string, newPassword: string): boolean {
+  public updateRoomPassword(roomName: string, newPassword?: string): void {
     const room = this.get(roomName);
     if (room) {
       room.password = newPassword;
-      return true;
     }
-    return false;
   }
 
   public getTop20RoomsByPlayerCount(): IRoom[] {
