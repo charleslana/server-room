@@ -36,7 +36,7 @@ export class RoomSocket {
     this.emitLobbyRoom(io, socket);
   }
 
-  public setupSocket(io: Server, socket: Socket) {
+  public setupSocket(io: Server, socket: Socket): void {
     this.createRoom(io, socket);
     this.joinRoom(io, socket);
     this.leave(io, socket);
@@ -49,7 +49,7 @@ export class RoomSocket {
     this.getFilterRoom(io, socket);
   }
 
-  private getFilterRoom(io: Server, socket: Socket): void {
+  private getFilterRoom(_io: Server, socket: Socket): void {
     socket.on('get-filter-room', (roomName: string) => {
       const filteredRooms = this.roomSingleton.getRoomsByNameLike(roomName);
       socket.emit('filtered-rooms', filteredRooms);
@@ -158,7 +158,7 @@ export class RoomSocket {
     });
   }
 
-  private emitLobbyRoom(io: Server, socket: Socket): void {
+  private emitLobbyRoom(_io: Server, socket: Socket): void {
     socket
       .to(this.lobbySocket.lobbyRoom)
       .emit('rooms', this.lobbySocket.getTop20RoomsByPlayerCount());

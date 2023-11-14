@@ -12,7 +12,7 @@ export class UserSocket {
   private playerSingleton: PlayerSingleton;
   private lobbySocket: LobbySocket;
 
-  public setupSocket(io: Server, socket: Socket) {
+  public setupSocket(io: Server, socket: Socket): void {
     this.join(io, socket);
   }
 

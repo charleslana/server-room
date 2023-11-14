@@ -54,15 +54,32 @@ export class LobbySocket {
     return rooms.filter(room => room.name !== this.lobbyRoom);
   }
 
-  public setupSocket(io: Server, socket: Socket) {
+  public setupSocket(io: Server, socket: Socket): void {
     this.getPlayersLobbyRoom(io, socket);
     this.leaveLobbyRoom(io, socket);
     this.getChatMessagesLobbyRoom(io, socket);
     this.sendMessageLobbyRoom(io, socket);
     this.getRooms(io, socket);
+    this.sendPrivateMessage(io, socket);
   }
 
-  private getRooms(io: Server, socket: Socket): void {
+  private sendPrivateMessage(_io: Server, socket: Socket): void {
+    socket.on('send-private-message', (playerId: string, message: string) => {
+      if (message.trim() === '') {
+        return;
+      }
+      const toPlayer = this.playerSingleton.get(playerId);
+      if (!toPlayer) {
+        return;
+      }
+      const sendPlayer = this.playerSingleton.get(socket.id);
+      if (sendPlayer && sendPlayer.name !== toPlayer.name) {
+        socket.to(toPlayer.id).emit('receive-private-message', sendPlayer.name, message);
+      }
+    });
+  }
+
+  private getRooms(_io: Server, socket: Socket): void {
     socket.on('get-rooms', () => {
       socket.emit('rooms', this.getTop20RoomsByPlayerCount());
     });
