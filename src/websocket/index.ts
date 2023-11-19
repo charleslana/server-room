@@ -1,3 +1,4 @@
+import { BattleSocket } from './BattleSocket';
 import { LobbySocket } from './LobbySocket';
 import { RoomSocket } from './RoomSocket';
 import { Server } from 'socket.io';
@@ -11,6 +12,8 @@ export function configureSockets(io: Server) {
     lobbySocket.setupSocket(io, socket);
     const roomSocket = new RoomSocket();
     roomSocket.setupSocket(io, socket);
+    const battleSocket = new BattleSocket();
+    battleSocket.setupSocket(io, socket);
     socket.on('disconnect', () => {
       lobbySocket.leave(io, socket);
       roomSocket.leaveAllRoom(io, socket);
