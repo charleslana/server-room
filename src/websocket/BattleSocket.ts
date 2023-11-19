@@ -12,5 +12,7 @@ export class BattleSocket {
     this.getBattle(io, socket);
   }
 
-  private getBattle(io: Server, socket: Socket) {}
+  private getBattle(_io: Server, socket: Socket) {
+    socket.on('get-battle', () => {});
+  }
 }
