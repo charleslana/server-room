@@ -12,4 +12,5 @@ export interface IBattle {
   opponent: IBattleCard;
   fields: IField[];
   finish: boolean;
+  started: boolean;
 }

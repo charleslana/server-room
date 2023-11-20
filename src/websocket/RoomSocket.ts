@@ -46,13 +46,24 @@ export class RoomSocket {
     this.sendMessageInRoom(io, socket);
     this.removeRoomPlayer(io, socket);
     this.changeRoomPassword(io, socket);
-    this.getFilterRoom(io, socket);
+    this.getOpponentInRoom(io, socket);
+    this.updatePlayerRoomReady(io, socket);
   }
 
-  private getFilterRoom(_io: Server, socket: Socket): void {
-    socket.on('get-filter-room', (roomName: string) => {
-      const filteredRooms = this.roomSingleton.getRoomsByNameLike(roomName);
-      socket.emit('filtered-rooms', filteredRooms);
+  private updatePlayerRoomReady(io: Server, socket: Socket): void {
+    socket.on('update-player-room-ready', (roomName: string, hasReady: boolean) => {
+      const room = this.roomSingleton.get(roomName);
+      if (!room) {
+        return;
+      }
+      this.roomSingleton.updatePlayerRoomReadyWithPlayerId(room, socket.id, hasReady);
+      this.getOpponentInRoom(io, socket);
+    });
+  }
+
+  private getOpponentInRoom(_io: Server, socket: Socket): void {
+    socket.on('get-opponent-in-room', (roomName: string) => {
+      socket.to(roomName).emit('room-opponent', this.roomSingleton.getPlayerBySocketId(socket.id));
     });
   }
 
@@ -213,8 +224,8 @@ export class RoomSocket {
   ): void {
     const newOwner = room.players.find(p => p.name !== newPlayer.name);
     if (newOwner) {
-      this.roomSingleton.updateRoomPlayerWithName(room, currentOwner.name, false);
-      this.roomSingleton.updateRoomPlayerWithName(room, newOwner.name, true);
+      this.roomSingleton.updatePlayerRoomOwnerWithName(room, currentOwner.name, false);
+      this.roomSingleton.updatePlayerRoomOwnerWithName(room, newOwner.name, true);
       currentOwner.isRoomOwner = false;
       newOwner.isRoomOwner = true;
       socket.to(room.name).emit('user-room-info', newOwner, room);

@@ -77,10 +77,21 @@ export class RoomSingleton {
     return false;
   }
 
-  public updateRoomPlayerWithName(room: IRoom, playerName: string, isRoomOwner: boolean): void {
+  public updatePlayerRoomOwnerWithName(
+    room: IRoom,
+    playerName: string,
+    isRoomOwner: boolean
+  ): void {
     const player = room.players.find(player => player.name === playerName);
     if (player) {
       player.isRoomOwner = isRoomOwner;
+    }
+  }
+
+  public updatePlayerRoomReadyWithPlayerId(room: IRoom, playerId: string, hasReady: boolean): void {
+    const player = room.players.find(player => player.id === playerId);
+    if (player) {
+      player.hasReady = hasReady;
     }
   }
 
@@ -103,5 +114,25 @@ export class RoomSingleton {
       room.name.toLowerCase().includes(lowerCaseNameLike)
     );
     return filteredRooms;
+  }
+
+  public getPlayerBySocketId(socketId: string): IPlayer | undefined {
+    for (const room of this.rooms) {
+      const opponent = room.players.find(player => player.id === socketId);
+      if (opponent) {
+        return opponent;
+      }
+    }
+    return undefined;
+  }
+
+  public getOpponentByPlayerId(playerId: string): IPlayer | undefined {
+    for (const room of this.rooms) {
+      const opponent = room.players.find(p => p.id !== playerId);
+      if (opponent) {
+        return opponent;
+      }
+    }
+    return undefined;
   }
 }

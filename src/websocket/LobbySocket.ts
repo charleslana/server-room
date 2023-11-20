@@ -61,6 +61,14 @@ export class LobbySocket {
     this.sendMessageLobbyRoom(io, socket);
     this.getRooms(io, socket);
     this.sendPrivateMessage(io, socket);
+    this.getFilterRoom(io, socket);
+  }
+
+  private getFilterRoom(_io: Server, socket: Socket): void {
+    socket.on('get-filter-room', (roomName: string) => {
+      const filteredRooms = this.roomSingleton.getRoomsByNameLike(roomName);
+      socket.emit('filtered-rooms', filteredRooms);
+    });
   }
 
   private sendPrivateMessage(_io: Server, socket: Socket): void {
